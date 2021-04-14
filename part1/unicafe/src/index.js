@@ -14,6 +14,9 @@ const Display = ({title, value}) => <span>{title}: <b>{value?value:0} </b></span
 
 const Statistics = ({good, neutral, bad}) => {
   const total = good + neutral + bad;
+  if(total === 0) {
+    return <p>No feedback give, please add some vote.</p>
+  }
   return(
     <div>
       <Display title='Good' value={good} />
