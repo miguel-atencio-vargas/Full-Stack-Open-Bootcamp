@@ -12,11 +12,25 @@ const Button = ({handleClick, content}) => {
 
 const Display = ({title, value}) => <span>{title}: <b>{value?value:0} </b></span>;
 
+const Statistics = ({good, neutral, bad}) => {
+  const total = good + neutral + bad;
+  return(
+    <div>
+      <Display title='Good' value={good} />
+      <Display title='Neutral' value={neutral} />
+      <Display title='Bad' value={bad} />
+      <br />
+      <Display title='All' value={total} />
+      <Display title='Average' value={good - bad / total} />
+      <Display title='Positive' value={good / total} />
+    </div>
+  )
+}
+
 const App = () => {
   const [good, setGood] = useState(0);
-  const [bad, setBad] = useState(0);
   const [neutral, setNeutral] = useState(0);
-  const total = good + neutral + bad;
+  const [bad, setBad] = useState(0);
   
   return(
     <>
@@ -25,15 +39,7 @@ const App = () => {
       <Button content='Neutral' handleClick={()=> setNeutral(neutral+1)}/>
       <Button content='Bad' handleClick={()=> setBad(bad+1)}/>
       <Heading title='Statistics'/>
-      <div>
-        <Display title='Good' value={good}/>
-        <Display title='Neutral' value={neutral}/>
-        <Display title='Bad' value={bad}/>
-        <br/>
-        <Display title='All' value={total} />
-        <Display title='Average' value={good-bad/total}/>
-        <Display title='Positive' value={good/total} />
-      </div>
+      <Statistics good={good} neutral={neutral} bad={bad}/>
     </>
   )
 }
