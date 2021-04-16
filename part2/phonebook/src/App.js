@@ -8,6 +8,13 @@ const App = () => {
   const addPerson = (e) => {
     e.preventDefault();
     if (!newPerson) return;
+    
+    const samePerson = persons.filter(item => item.name === newPerson);
+    if (samePerson.length !== 0) {
+      alert(`${newPerson} is already added to Phonebook.`);
+      return;
+    }
+    
     const newPersonObject = {
       name: newPerson
     }
