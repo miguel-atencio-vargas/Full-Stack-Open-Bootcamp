@@ -1,51 +1,14 @@
 import React, {useState, useEffect} from 'react';
 import axios from 'axios';
-
-
-const ElementsChild = ({ renderCountries, handleClick }) => {
-  const handleButton = (e) => {
-    const searchThisCountrie = e.target.dataset.countrie;
-    let position = searchThisCountrie.indexOf('(');
-    position = position > 0? position: searchThisCountrie.length;
-    handleClick(searchThisCountrie.substring(0, position));
-  }
-
-  const length = renderCountries.length;
-  if (length > 10) {
-    return <li>Too many countries, specify another filter</li>;
-  }
-  if(length > 1) {
-    return renderCountries.map(e => <li key={e.name}>
-      {e.name}  
-      <button data-countrie={e.name} onClick={handleButton}>show</button>
-      </li>);
-  }
-  if(length === 1 ){
-    const countrie = renderCountries.pop();
-    
-    return (<li>
-      <h2>{countrie.name}</h2>
-      <p>capital: {countrie.capital}</p>
-      <p>population: {countrie.population}</p>
-      <h3>Languages</h3>
-      <ul>
-        {countrie.languages.map(e => <li key={e.name}>{e.name}</li>)}
-      </ul>
-      <img 
-        src={countrie.flag} 
-        alt={'Flag of: ' + countrie.name}
-        style={{width:'30%', marginTop: '20px'}}
-      />
-    </li>)
-  }
-  return <li>not found</li>
-}
-
+import ElementsChild from './components/ElementsChild';
+const api_key = process.env.REACT_APP_API_KEY;
 
 function App() {
   const [countries, setCountries] = useState([]);
   const [searchedCountries, setSearchedCountries] = useState([]);
   const [searchCountrie, setSearchCountrie] = useState('');
+  const [capital, setCapital] = useState('');
+  const [weather, setWeather] = useState({})
 
   const hookRequestData = () => {
     const eventHandler = response => setCountries(response.data);
@@ -54,20 +17,34 @@ function App() {
       .then(eventHandler)
       .catch(err => console.log(err));
   }
-  useEffect(hookRequestData, []);
-  
+  useEffect(hookRequestData, [searchCountrie]);
 
-  const handleInputCountrie = (e) => setSearchCountrie(e.target.value.replace(/[^a-zA-Z ]/g, ''));
+  const hookRequestWeather = () => {
+    const eventHandler = response => {
+      console.log(response);
+      setWeather(response.data.current)
+    }
+    if(capital) {
+      const endpoint = `http://api.weatherstack.com/current?access_key=${api_key}&query=${capital}`;
+      const promise = axios.get(endpoint);
+      promise.then(eventHandler).catch(err => console.log(err));
+    }
+  }
+  useEffect(hookRequestWeather, [capital]);
+  // There another border case when the name has non-alphabetic chars like '(' i.g. Bolivia
+  const handleInputCountrie = e => setSearchCountrie(e.target.value.replace(/[^a-zA-Z ]/g, ''));
   
   const hookSearch = () => {
-    const countriesFinded = countries.filter(countrie => {
-      return new RegExp(searchCountrie, 'gi').test(countrie.name);
-    });
-    setSearchedCountries(countriesFinded);
+    if (searchCountrie) {
+      const countriesFinded = countries.filter(countrie => {
+        return new RegExp(searchCountrie, 'gi').test(countrie.name);
+      });
+      setSearchedCountries(countriesFinded);
+      if (countriesFinded.length === 1 && countriesFinded[0].capital !== capital) setCapital(countriesFinded[0].capital);
+    }
   }
-  useEffect(hookSearch, [searchCountrie, countries]);
+  useEffect(hookSearch, [searchCountrie, capital, countries]);
 
-  
   return(
     <>
       <form>
@@ -75,7 +52,11 @@ function App() {
         <input type='text' onChange={handleInputCountrie}/>
       </form>
       <ul>
-        <ElementsChild renderCountries={searchedCountries} handleClick={setSearchCountrie}/>
+        <ElementsChild 
+          renderCountries={searchedCountries} 
+          handleSearch={setSearchCountrie}
+          weatherData={weather}
+          />
       </ul>
     </>
   )
