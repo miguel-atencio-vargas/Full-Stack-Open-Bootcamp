@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Filter from './components/Filter';
 import PersonForm from './components/PersonForm';
-import Persons from './components/Persons';
+import Person from './components/Person';
 import personsService from './services/persons';
 
 
@@ -42,6 +42,18 @@ const App = () => {
   const handlePhoneChange = (e) => setNewPhone(e.target.value);
   const handleSearchChange = (e) => setSearchPerson(e.target.value);
 
+  const deletePersonOf = (person) => {
+    const handleRes = (status) => {
+      if(status === 200) {
+        setPersons(persons.filter(item => item.id !== person.id))
+      }
+    }
+    const isSure = window.confirm(`Are you sure that you want delete ${person.name} contact`);
+    if(isSure){
+      personsService.deletePerson(person.id).then(handleRes);
+    }
+  }
+
   const hookSearch = () => {
     const personsFinded = persons.filter(({ name }) => {
       const regExp = new RegExp(searchPerson, 'gi');
@@ -69,7 +81,16 @@ const App = () => {
         newPhone={newPhone}
       />
       <h2>Numbers</h2>
-      <Persons personsToShow={personsToShow} />
+      <ul>
+        {personsToShow.map(item => {
+          return(
+            <Person 
+              key={item.name} 
+              person={item}
+              deletePerson={deletePersonOf} />
+          )
+        })}
+      </ul>
     </>
   )
 }
