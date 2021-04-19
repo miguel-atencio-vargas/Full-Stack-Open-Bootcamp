@@ -14,7 +14,12 @@ const App = () => {
   const [searchedPersons, setSearchedPersons] = useState([]);
 
     useEffect(() => {
-      const eventHandler = data => setPersons(data);
+      const fakeContact = {
+        name: 'im not a valid contact',
+        number: '000-000-000',
+        id: 1000
+      }
+      const eventHandler = data => setPersons(data.concat(fakeContact));
       personsService.getAll().then(eventHandler)
     }, []);
 
@@ -24,8 +29,19 @@ const App = () => {
       return name.toLocaleLowerCase() === newPerson.toLocaleLowerCase();
     });
     if (samePerson.length > 0) {
-      alert(`${newPerson} is already added to Phonebook.`);
-      return;
+      const personToUpdate = samePerson[0];
+      const isSure = window.confirm(`${personToUpdate.name} is already added to Phonebook, replace the old number with a new one?`);
+      if(isSure) {
+        const handleRes = (data) => {
+          setPersons(persons.map(item => item.id === data.id ? data : item));
+        }
+        const changedPerson = {...personToUpdate, number: newPhone};
+        personsService.update(personToUpdate.id, changedPerson).then(handleRes).catch(err => {
+          alert(`the contact ${personToUpdate.name} non exist on the server`);
+          setPersons(persons.filter(item => item.id !== personToUpdate.id));
+        });
+      }
+      return
     }
     const newPersonObject = {
       name: newPerson,
@@ -50,7 +66,10 @@ const App = () => {
     }
     const isSure = window.confirm(`Are you sure that you want delete ${person.name} contact`);
     if(isSure){
-      personsService.deletePerson(person.id).then(handleRes);
+      personsService.deletePerson(person.id).then(handleRes).catch(err => {
+        alert(`the contact ${person.name} non exist on the server`);
+        setPersons(persons.filter(item => item.id !== person.id));
+      });
     }
   }
 
