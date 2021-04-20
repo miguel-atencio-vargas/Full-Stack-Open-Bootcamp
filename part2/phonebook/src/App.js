@@ -3,6 +3,7 @@ import Filter from './components/Filter';
 import PersonForm from './components/PersonForm';
 import Person from './components/Person';
 import personsService from './services/persons';
+import Notification from './components/Notification';
 
 
 const App = () => {
@@ -12,17 +13,20 @@ const App = () => {
   const [newPhone, setNewPhone] = useState('');
   const [searchPerson, setSearchPerson] = useState('');
   const [searchedPersons, setSearchedPersons] = useState([]);
+  const [successMessage, setSuccessMessage] = useState(null);
 
-    useEffect(() => {
-      const fakeContact = {
-        name: 'im not a valid contact',
-        number: '000-000-000',
-        id: 1000
-      }
-      const eventHandler = data => setPersons(data.concat(fakeContact));
-      personsService.getAll().then(eventHandler)
-    }, []);
+  useEffect(() => {
+    const fakeContact = {
+      name: 'im not a valid contact',
+      number: '000-000-000',
+      id: 1000
+    }
+    const handleRes = data => setPersons(data.concat(fakeContact));
+    personsService.getAll().then(handleRes);
+  }, []);
 
+  const resetMessage = setState => setTimeout(() => setState(null), 3500);
+  
   const addPerson = (e) => {
     e.preventDefault();
     const samePerson = persons.filter(({ name }) => {
@@ -31,25 +35,30 @@ const App = () => {
     if (samePerson.length > 0) {
       const personToUpdate = samePerson[0];
       const isSure = window.confirm(`${personToUpdate.name} is already added to Phonebook, replace the old number with a new one?`);
-      if(isSure) {
-        const handleRes = (data) => {
-          setPersons(persons.map(item => item.id === data.id ? data : item));
-        }
-        const changedPerson = {...personToUpdate, number: newPhone};
-        personsService.update(personToUpdate.id, changedPerson).then(handleRes).catch(err => {
+      
+      if (!isSure) return;
+      const handleRes = data => {
+        setSuccessMessage(`Updated ${data.name} phone`);
+        setPersons(persons.map(item => item.id === data.id ? data : item));
+        resetMessage(setSuccessMessage);
+      }
+      personsService.update(personToUpdate.id, { ...personToUpdate, number: newPhone })
+        .then(handleRes)
+        .catch(err => {
           alert(`the contact ${personToUpdate.name} non exist on the server`);
           setPersons(persons.filter(item => item.id !== personToUpdate.id));
         });
+    } else {
+      const newPersonObject = {
+        name: newPerson,
+        number: newPhone
       }
-      return
+      personsService.create(newPersonObject).then((data) => {
+        setSuccessMessage(`Added ${data.name} `);
+        setPersons(persons.concat(data));
+        resetMessage(setSuccessMessage);
+      });
     }
-    const newPersonObject = {
-      name: newPerson,
-      number: newPhone
-    }
-    personsService.create(newPersonObject).then((data) => {
-      setPersons(persons.concat(data))
-    })
     setNewPerson('');
     setNewPhone('');
   }
@@ -87,6 +96,7 @@ const App = () => {
   return (
     <>
       <h2>Phonebook</h2>
+      <Notification message={successMessage}/>
       <Filter 
       handleChange={handleSearchChange} 
       searchPerson={searchPerson}
