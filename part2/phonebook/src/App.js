@@ -13,7 +13,7 @@ const App = () => {
   const [newPhone, setNewPhone] = useState('');
   const [searchPerson, setSearchPerson] = useState('');
   const [searchedPersons, setSearchedPersons] = useState([]);
-  const [successMessage, setSuccessMessage] = useState(null);
+  const [message, setMessage] = useState({info: null});
 
   useEffect(() => {
     const fakeContact = {
@@ -25,7 +25,7 @@ const App = () => {
     personsService.getAll().then(handleRes);
   }, []);
 
-  const resetMessage = setState => setTimeout(() => setState(null), 3500);
+  const resetMessage = setState => setTimeout(() => setState({info: null}), 3500);
   
   const addPerson = (e) => {
     e.preventDefault();
@@ -38,14 +38,15 @@ const App = () => {
       
       if (!isSure) return;
       const handleRes = data => {
-        setSuccessMessage(`Updated ${data.name} phone`);
+        setMessage({ info: `Updated ${data.name} phone`, success: true});
         setPersons(persons.map(item => item.id === data.id ? data : item));
-        resetMessage(setSuccessMessage);
+        resetMessage(setMessage);
       }
       personsService.update(personToUpdate.id, { ...personToUpdate, number: newPhone })
         .then(handleRes)
-        .catch(err => {
-          alert(`the contact ${personToUpdate.name} non exist on the server`);
+        .catch(() => {
+          setMessage({ info: `Information of ${personToUpdate.name} has already been removed from the server`, success: false});
+          resetMessage(setMessage);
           setPersons(persons.filter(item => item.id !== personToUpdate.id));
         });
     } else {
@@ -54,9 +55,9 @@ const App = () => {
         number: newPhone
       }
       personsService.create(newPersonObject).then((data) => {
-        setSuccessMessage(`Added ${data.name} `);
+        setMessage({ info: `Added ${data.name}`, success: true});
         setPersons(persons.concat(data));
-        resetMessage(setSuccessMessage);
+        resetMessage(setMessage);
       });
     }
     setNewPerson('');
@@ -75,8 +76,9 @@ const App = () => {
     }
     const isSure = window.confirm(`Are you sure that you want delete ${person.name} contact`);
     if(isSure){
-      personsService.deletePerson(person.id).then(handleRes).catch(err => {
-        alert(`the contact ${person.name} non exist on the server`);
+      personsService.deletePerson(person.id).then(handleRes).catch(() => {
+        setMessage({ info: `the contact ${person.name} non exist on the server`, success: false});
+        resetMessage(setMessage);
         setPersons(persons.filter(item => item.id !== person.id));
       });
     }
@@ -96,7 +98,7 @@ const App = () => {
   return (
     <>
       <h2>Phonebook</h2>
-      <Notification message={successMessage}/>
+      <Notification message={message}/>
       <Filter 
       handleChange={handleSearchChange} 
       searchPerson={searchPerson}
